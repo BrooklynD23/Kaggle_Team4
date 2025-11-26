@@ -1,0 +1,40 @@
+# Student Success Prediction - Requirements
+# ==========================================
+# Core ML Stack
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+
+# Gradient Boosting (choose one or both)
+xgboost>=1.5.0
+lightgbm>=3.3.0
+
+# Model Interpretation
+shap>=0.40.0
+
+# Fairness (optional but recommended)
+# fairlearn>=0.7.0  # Uncomment if needed
+
+# Data Validation
+# pandera>=0.10.0  # Uncomment if using schema validation
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Utilities
+joblib>=1.1.0
+tqdm>=4.62.0
+
+# Jupyter (for notebooks)
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Development
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.950
