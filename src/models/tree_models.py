@@ -169,7 +169,8 @@ class RandomForestModel:
         self.is_fitted = False
         
     def fit(self, X: np.ndarray, y: np.ndarray,
-            feature_names: Optional[List[str]] = None) -> 'RandomForestModel':
+            feature_names: Optional[List[str]] = None,
+            sample_weight: Optional[np.ndarray] = None) -> 'RandomForestModel':
         """
         Train the Random Forest.
         
@@ -181,7 +182,10 @@ class RandomForestModel:
            d. Repeat until stopping criteria met
         2. Store all trees for voting
         """
-        self.model.fit(X, y)
+        if sample_weight is not None:
+            self.model.fit(X, y, sample_weight=sample_weight)
+        else:
+            self.model.fit(X, y)
         self.feature_names = feature_names or [f'feature_{i}' for i in range(X.shape[1])]
         self.is_fitted = True
         
@@ -322,6 +326,9 @@ if XGBOOST_AVAILABLE:
                      learning_rate: float = 0.1,
                      subsample: float = 0.8,
                      colsample_bytree: float = 0.8,
+                     reg_alpha: float = 0.1,
+                     reg_lambda: float = 1.0,
+                     min_child_weight: int = 3,
                      random_state: int = 42,
                      n_jobs: int = -1):
             """
@@ -368,6 +375,9 @@ if XGBOOST_AVAILABLE:
                 'learning_rate': learning_rate,
                 'subsample': subsample,
                 'colsample_bytree': colsample_bytree,
+                'reg_alpha': reg_alpha,
+                'reg_lambda': reg_lambda,
+                'min_child_weight': min_child_weight,
                 'random_state': random_state,
                 'n_jobs': n_jobs,
                 'eval_metric': 'mlogloss',
@@ -389,7 +399,8 @@ if XGBOOST_AVAILABLE:
             
         def fit(self, X: np.ndarray, y: np.ndarray,
                 feature_names: Optional[List[str]] = None,
-                eval_set: Optional[List[Tuple]] = None) -> 'XGBoostModel':
+                eval_set: Optional[List[Tuple]] = None,
+                sample_weight: Optional[np.ndarray] = None) -> 'XGBoostModel':
             """
             Train XGBoost with optional early stopping.
             
@@ -415,6 +426,8 @@ if XGBOOST_AVAILABLE:
                 # Disable early stopping for CV (no eval_set available)
                 self.model.set_params(early_stopping_rounds=None)
             
+            if sample_weight is not None:
+                fit_params['sample_weight'] = sample_weight
             self.model.fit(X, y, **fit_params)
             
             if eval_set is not None and hasattr(self.model, 'best_iteration'):
@@ -568,7 +581,8 @@ if LIGHTGBM_AVAILABLE:
             
         def fit(self, X: np.ndarray, y: np.ndarray,
                 feature_names: Optional[List[str]] = None,
-                categorical_features: Optional[List[int]] = None) -> 'LightGBMModel':
+                categorical_features: Optional[List[int]] = None,
+                sample_weight: Optional[np.ndarray] = None) -> 'LightGBMModel':
             """
             Train LightGBM.
             
@@ -581,6 +595,8 @@ if LIGHTGBM_AVAILABLE:
             if categorical_features:
                 fit_params['categorical_feature'] = categorical_features
             
+            if sample_weight is not None:
+                fit_params['sample_weight'] = sample_weight
             self.model.fit(X, y, **fit_params)
             return self
         
@@ -777,7 +793,7 @@ def compare_tree_models(X_train: np.ndarray, y_train: np.ndarray,
         # Train
         if isinstance(model, XGBoostModel) and XGBOOST_AVAILABLE:
             model.fit(X_train, y_train, feature_names=feature_names,
-                     eval_set=[(X_test, y_test)], early_stopping_rounds=50)
+                     eval_set=[(X_test, y_test)])
         else:
             model.fit(X_train, y_train, feature_names=feature_names)
         

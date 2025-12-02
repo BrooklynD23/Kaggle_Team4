@@ -1,61 +1,74 @@
 # Student Success Prediction - Experiment Report
 
-**Generated**: 2025-11-29 09:44:33
-**Duration**: 394.7 seconds
+**Generated**: 2025-11-30 19:26:27
+**Duration**: 314.1 seconds
 
 ## Executive Summary
 
 | Metric | Baseline | Final | Improvement |
 |--------|----------|-------|-------------|
-| Macro F1 | 0.6981 | 0.6873 | **+-0.0108** (-1.5%) |
-| Dropout F1 | 0.7628 | 0.7877 | +0.0249 |
-| Enrolled F1 | 0.5072 | 0.4167 | +-0.0906 |
-| Graduate F1 | 0.8243 | 0.8576 | +0.0333 |
+| Macro F1 | 0.7174 | 0.7174 | **-0.0000** (-0.0%) |
+| Dropout F1 | 0.7759 | 0.7795 | +0.0036 |
+| Enrolled F1 | 0.5333 | 0.5190 | -0.0143 |
+| Graduate F1 | 0.8429 | 0.8536 | +0.0107 |
 
 ## Baseline Results
 
-- **Macro F1**: 0.6981
-- **Accuracy**: 0.7395
-- **Per-class F1**: Dropout=0.7628, Enrolled=0.5072, Graduate=0.8243
+- **Macro F1**: 0.7174
+- **Accuracy**: 0.7590
+- **Per-class F1**: Dropout=0.7759, Enrolled=0.5333, Graduate=0.8429
+
+### Leakage Guard
+
+The following potential post-outcome features were masked to prevent leakage:
+- Curricular units 2nd sem (approved), Curricular units 2nd sem (credited), Curricular units 2nd sem (enrolled), Curricular units 2nd sem (evaluations), Curricular units 2nd sem (grade), Curricular units 2nd sem (without evaluations), approval_rate_sem2, eval_efficiency_sem2, grade_per_unit_sem2, units_without_eval_sem2, zero_enrolled_sem2
 
 ## Phase Results
 
 ### Model Training
 
-*Best model: XGBoost (Tuned)*
+*Best model: LightGBM (Tuned)*
 
-- **Macro F1**: 0.7252
-- **Accuracy**: 0.7846
-- **Delta from baseline**: +0.0271 (+3.9%)
-- **Per-class F1**: Dropout=0.8083, Enrolled=0.5068, Graduate=0.8605
+- **Macro F1**: 0.7260
+- **Accuracy**: 0.7892
+- **Delta from baseline**: +0.0086 (+1.2%)
+- **Per-class F1**: Dropout=0.8065, Enrolled=0.5072, Graduate=0.8642
 
 ### Threshold Optimization
 
-*Optimized thresholds: [0.9        0.67142857 0.84285714]*
+*Optimized thresholds: [0.21428571 0.72857143 0.27142857]*
 
-- **Macro F1**: 0.7385
-- **Accuracy**: 0.7982
-- **Delta from baseline**: +0.0403 (+5.8%)
-- **Per-class F1**: Dropout=0.8163, Enrolled=0.5314, Graduate=0.8676
+- **Macro F1**: 0.7450
+- **Accuracy**: 0.7861
+- **Delta from baseline**: +0.0276 (+3.8%)
+- **Per-class F1**: Dropout=0.8099, Enrolled=0.5670, Graduate=0.8580
 
 ### Final Evaluation (Test Set)
 
 *Final evaluation on held-out test set*
 
-- **Macro F1**: 0.6873
-- **Accuracy**: 0.7636
-- **Delta from baseline**: -0.0108 (-1.5%)
-- **Per-class F1**: Dropout=0.7877, Enrolled=0.4167, Graduate=0.8576
+- **Macro F1**: 0.7174
+- **Accuracy**: 0.7590
+- **Delta from baseline**: -0.0000 (-0.0%)
+- **Per-class F1**: Dropout=0.7795, Enrolled=0.5190, Graduate=0.8536
+
+## Final Test Metrics
+
+- **Model**: LightGBM (Tuned)
+- **Macro F1**: 0.7174
+- **Weighted F1**: 0.7699
+- **Accuracy**: 0.7590
+- **Per-class F1**: Dropout=0.7795, Enrolled=0.5190, Graduate=0.8536
 
 ## Best Hyperparameters
 
 ### Random Forest
 ```
 max_depth: 19
-max_features: None
+max_features: sqrt
 min_samples_leaf: 1
-min_samples_split: 5
-n_estimators: 149
+min_samples_split: 8
+n_estimators: 108
 ```
 
 ### XGBoost
@@ -88,30 +101,30 @@ subsample: 0.7350460685614512
 
 | Rank | Feature | Importance |
 |------|---------|------------|
-| 1 | None | 10.80% |
-| 2 | None | 6.29% |
-| 3 | None | 5.84% |
-| 4 | None | 5.03% |
-| 5 | None | 5.03% |
-| 6 | None | 4.07% |
-| 7 | None | 3.77% |
-| 8 | None | 3.32% |
-| 9 | None | 2.30% |
-| 10 | None | 2.18% |
-| 11 | None | 1.97% |
-| 12 | None | 1.73% |
-| 13 | None | 1.64% |
-| 14 | None | 1.62% |
-| 15 | None | 1.59% |
+| 1 | grade_improvement | 7.65% |
+| 2 | grade_per_unit_sem1 | 6.80% |
+| 3 | Curricular units 1st sem (grade) | 6.49% |
+| 4 | Father's occupation | 5.88% |
+| 5 | Course | 5.39% |
+| 6 | family_education_avg | 5.34% |
+| 7 | Mother's occupation | 4.91% |
+| 8 | Age at enrollment | 4.58% |
+| 9 | approval_rate_trend | 4.19% |
+| 10 | eval_efficiency_sem1 | 3.65% |
+| 11 | approval_rate_overall | 3.37% |
+| 12 | Curricular units 1st sem (evaluations) | 3.15% |
+| 13 | Application mode | 2.66% |
+| 14 | Mother's qualification | 2.65% |
+| 15 | Inflation rate | 2.51% |
 
 ## Confusion Matrices
 
 ### Final
 ```
               Dropout    Enrolled    Graduate
-   Dropout        167          25          21
-  Enrolled         34          45          40
-  Graduate         10          27         295
+   Dropout        152          46          15
+  Enrolled         19          75          25
+  Graduate          6          49         277
 ```
 
 ## Ablation Study
@@ -120,6 +133,6 @@ Contribution of each phase to overall improvement:
 
 | Phase | Delta F1 | Cumulative F1 |
 |-------|----------|---------------|
-| Model Training | +0.0271 | 0.7252 |
-| Threshold Optimization | +0.0132 | 0.7385 |
-| Final Evaluation (Test Set) | -0.0511 | 0.6873 |
+| Model Training | +0.0086 | 0.7260 |
+| Threshold Optimization | +0.0190 | 0.7450 |
+| Final Evaluation (Test Set) | -0.0276 | 0.7174 |

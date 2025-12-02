@@ -31,6 +31,7 @@ from sklearn.metrics import (
     f1_score, accuracy_score, classification_report, 
     confusion_matrix, roc_auc_score
 )
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.calibration import CalibratedClassifierCV
 from scipy.stats import uniform, randint
 import joblib
@@ -102,11 +103,34 @@ class PipelineConfig:
     # Class Imbalance Handling
     USE_SMOTE = True
     SMOTE_SAMPLING_STRATEGY = 'auto'  # Or dict like {1: 1000} for specific counts
+    SMOTE_K_NEIGHBORS = 5
+    # Target ratios expressed as % of majority class size (values <=1)
+    SMOTE_CLASS_RATIOS = {
+        0: 0.95,  # Dropout
+        1: 0.85   # Enrolled (minority) - keep under majority to reduce overfit
+    }
+    USE_CLASS_WEIGHTS = True
+    USE_CLASS_WEIGHTS_WITH_SMOTE = False
+    CLASS_WEIGHT_STRATEGY = 'balanced'  # or 'none'
+    CUSTOM_CLASS_WEIGHTS = None  # e.g., {0: 1.0, 1: 1.4, 2: 0.8}
+    
+    # Leakage guard
+    ENABLE_LEAKAGE_GUARD = True
+    LEAKAGE_FEATURE_PATTERNS = ['2nd sem', '_sem2']
+    LEAKAGE_FEATURE_EXACT = []  # Explicit column names to drop
+    
+    # Artifacts
+    ARTIFACTS_PATH = Path('artifacts')
     
     # Hyperparameter Tuning
     TUNE_HYPERPARAMETERS = True
     TUNING_N_ITER = 50  # Number of random search iterations
     TUNING_CV_FOLDS = 3  # CV folds for tuning (less than main CV for speed)
+    
+    # Model Regularization Defaults
+    XGB_REG_ALPHA = 0.25
+    XGB_REG_LAMBDA = 1.75
+    XGB_MIN_CHILD_WEIGHT = 5
     
     # Threshold Optimization
     OPTIMIZE_THRESHOLDS = True
@@ -131,9 +155,13 @@ class ResultsTracker:
             'baseline': None,
             'phases': [],
             'best_params': {},
-            'feature_importance': None,
+            'feature_importance': [],
             'confusion_matrices': {},
-            'timestamps': {}
+            'timestamps': {},
+            'feature_names': [],
+            'test_results': None,
+            'best_model_name': None,
+            'leakage_mask': []
         }
         self.start_time = datetime.now()
         
@@ -173,7 +201,17 @@ class ResultsTracker:
         
     def log_feature_importance(self, importance_df: pd.DataFrame):
         """Log feature importance rankings."""
-        self.results['feature_importance'] = importance_df.to_dict()
+        records = importance_df.to_dict(orient='records')
+        sanitized = []
+        for row in records:
+            clean_row = {}
+            for key, value in row.items():
+                if isinstance(value, (np.floating, np.integer)):
+                    clean_row[key] = value.item()
+                else:
+                    clean_row[key] = value
+            sanitized.append(clean_row)
+        self.results['feature_importance'] = sanitized
         
     def log_confusion_matrix(self, phase_name: str, cm: np.ndarray, class_names: List[str]):
         """Log confusion matrix for a phase."""
@@ -181,6 +219,61 @@ class ResultsTracker:
             'matrix': cm.tolist(),
             'class_names': class_names
         }
+    
+    def set_feature_names(self, feature_names: List[str]):
+        """Persist the canonical feature ordering for downstream consumers."""
+        self.results['feature_names'] = list(feature_names)
+    
+    def log_test_results(self, test_results: Dict[str, Any]):
+        """Persist final test-set metrics for reporting and APIs."""
+        # Ensure pure python types for serialization
+        serialized = {
+            key: value if isinstance(value, (str, list, dict))
+            else (value.tolist() if isinstance(value, np.ndarray) else float(value))
+            for key, value in test_results.items()
+        }
+        self.results['test_results'] = serialized
+    
+    def export_artifacts(self, output_dir: Path):
+        """Write rich artifacts for downstream dashboards/APIs."""
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        payload = self._serialize_for_json({
+            'generated_at': datetime.now().isoformat(),
+            **self.results
+        })
+        
+        latest_run_path = output_dir / "latest_run.json"
+        with open(latest_run_path, 'w') as f:
+            json.dump(payload, f, indent=2)
+        
+        if self.results['feature_importance']:
+            with open(output_dir / "feature_importance.json", 'w') as f:
+                json.dump(self._serialize_for_json(self.results['feature_importance']), f, indent=2)
+        
+        if self.results['confusion_matrices']:
+            with open(output_dir / "confusion_matrices.json", 'w') as f:
+                json.dump(self._serialize_for_json(self.results['confusion_matrices']), f, indent=2)
+        
+        if self.results['feature_names']:
+            with open(output_dir / "feature_manifest.json", 'w') as f:
+                json.dump({
+                    'generated_at': datetime.now().isoformat(),
+                    'feature_names': self.results['feature_names']
+                }, f, indent=2)
+    
+    def _serialize_for_json(self, obj: Any):
+        """Recursively convert numpy/scalar types to JSON-friendly forms."""
+        if isinstance(obj, dict):
+            return {k: self._serialize_for_json(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self._serialize_for_json(v) for v in obj]
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (np.floating, np.integer)):
+            return obj.item()
+        return obj
         
     def generate_report(self, output_path: str = "REPORT.md") -> str:
         """Generate REPORT.md with all results."""
@@ -202,10 +295,12 @@ class ResultsTracker:
             final_phase = self.results['phases'][-1]
             final_f1 = final_phase['metrics'].get('macro_f1', 0)
             improvement = final_f1 - baseline_f1
+            improvement_pct = ((improvement / baseline_f1) * 100) if baseline_f1 else 0
+            sign = '+' if improvement >= 0 else ''
             
             report_lines.append(f"| Metric | Baseline | Final | Improvement |")
             report_lines.append(f"|--------|----------|-------|-------------|")
-            report_lines.append(f"| Macro F1 | {baseline_f1:.4f} | {final_f1:.4f} | **+{improvement:.4f}** ({improvement/baseline_f1*100:.1f}%) |")
+            report_lines.append(f"| Macro F1 | {baseline_f1:.4f} | {final_f1:.4f} | **{sign}{improvement:.4f}** ({sign}{improvement_pct:.1f}%) |")
             
             # Per-class comparison if available
             if 'per_class_f1' in self.results['baseline'] and 'per_class_f1' in final_phase['metrics']:
@@ -216,7 +311,8 @@ class ResultsTracker:
                 for i, name in enumerate(class_names):
                     if i < len(baseline_per_class) and i < len(final_per_class):
                         delta = final_per_class[i] - baseline_per_class[i]
-                        report_lines.append(f"| {name} F1 | {baseline_per_class[i]:.4f} | {final_per_class[i]:.4f} | +{delta:.4f} |")
+                        sign_delta = '+' if delta >= 0 else ''
+                        report_lines.append(f"| {name} F1 | {baseline_per_class[i]:.4f} | {final_per_class[i]:.4f} | {sign_delta}{delta:.4f} |")
         
         report_lines.append("")
         
@@ -230,6 +326,14 @@ class ResultsTracker:
                 report_lines.append(f"- **Per-class F1**: Dropout={self.results['baseline']['per_class_f1'][0]:.4f}, " +
                                    f"Enrolled={self.results['baseline']['per_class_f1'][1]:.4f}, " +
                                    f"Graduate={self.results['baseline']['per_class_f1'][2]:.4f}")
+        report_lines.append("")
+        
+        if self.results['leakage_mask']:
+            report_lines.append("### Leakage Guard")
+            report_lines.append("")
+            report_lines.append("The following potential post-outcome features were masked to prevent leakage:")
+            bullet_list = ", ".join(self.results['leakage_mask'])
+            report_lines.append(f"- {bullet_list}")
         report_lines.append("")
         
         # Phase Results
@@ -259,6 +363,22 @@ class ResultsTracker:
                                    f"Graduate={metrics['per_class_f1'][2]:.4f}")
             report_lines.append("")
         
+        if self.results['test_results']:
+            test = self.results['test_results']
+            report_lines.append("## Final Test Metrics")
+            report_lines.append("")
+            report_lines.append(f"- **Model**: {test.get('model_name', 'N/A')}")
+            report_lines.append(f"- **Macro F1**: {test.get('test_macro_f1', 0):.4f}")
+            report_lines.append(f"- **Weighted F1**: {test.get('test_weighted_f1', 0):.4f}")
+            report_lines.append(f"- **Accuracy**: {test.get('test_accuracy', 0):.4f}")
+            if 'test_per_class_f1' in test:
+                classes = test['test_per_class_f1']
+                report_lines.append(
+                    f"- **Per-class F1**: Dropout={classes[0]:.4f}, "
+                    f"Enrolled={classes[1]:.4f}, Graduate={classes[2]:.4f}"
+                )
+            report_lines.append("")
+        
         # Best Hyperparameters
         if self.results['best_params']:
             report_lines.append("## Best Hyperparameters")
@@ -279,9 +399,15 @@ class ResultsTracker:
             report_lines.append("|------|---------|------------|")
             
             importance_data = self.results['feature_importance']
-            if 'Feature' in importance_data and 'Importance_Pct' in importance_data:
-                features = list(importance_data['Feature'].values())
-                importances = list(importance_data['Importance_Pct'].values())
+            if isinstance(importance_data, list) and importance_data:
+                for i, row in enumerate(importance_data[:15], 1):
+                    feature_name = row.get('Feature', 'N/A')
+                    importance_pct = row.get('Importance_Pct', row.get('Importance', 0))
+                    report_lines.append(f"| {i} | {feature_name} | {importance_pct:.2f}% |")
+            elif isinstance(importance_data, dict) and 'Feature' in importance_data:
+                # Backwards compatibility with older dict orientation
+                features = list(importance_data.get('Feature', {}).values())
+                importances = list(importance_data.get('Importance_Pct', {}).values())
                 for i, (feat, imp) in enumerate(zip(features[:15], importances[:15]), 1):
                     report_lines.append(f"| {i} | {feat} | {imp:.2f}% |")
             report_lines.append("")
@@ -354,6 +480,7 @@ class DataLoader:
         self.config = config or PipelineConfig()
         self.label_encoder = LabelEncoder()
         self.feature_engineer = None
+        self.dropped_leakage_features: List[str] = []
         
     def load_data(self, filepath: str, apply_feature_engineering: bool = True) -> pd.DataFrame:
         """
@@ -502,7 +629,39 @@ class DataLoader:
         # Replace inf values
         X = X.replace([np.inf, -np.inf], 0)
         
+        X = self._apply_leakage_guard(X)
+        
         return X.values, y, list(X.columns)
+    
+    def _apply_leakage_guard(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Drop columns flagged as potential leakage."""
+        self.dropped_leakage_features = []
+        
+        if not getattr(self.config, 'ENABLE_LEAKAGE_GUARD', False):
+            return X
+        
+        patterns = [p.lower() for p in (getattr(self.config, 'LEAKAGE_FEATURE_PATTERNS', []) or [])]
+        explicit = set(getattr(self.config, 'LEAKAGE_FEATURE_EXACT', []) or [])
+        drop_cols = set()
+        
+        for col in X.columns:
+            col_lower = col.lower()
+            if col in explicit:
+                drop_cols.add(col)
+                continue
+            if any(pattern in col_lower for pattern in patterns):
+                drop_cols.add(col)
+        
+        drop_cols = [col for col in drop_cols if col in X.columns]
+        
+        if drop_cols:
+            self.dropped_leakage_features = sorted(drop_cols)
+            X = X.drop(columns=drop_cols)
+            preview = ", ".join(self.dropped_leakage_features[:8])
+            suffix = "..." if len(self.dropped_leakage_features) > 8 else ""
+            print(f"🔒 Leakage guard removed {len(self.dropped_leakage_features)} columns: {preview}{suffix}")
+        
+        return X
 
 
 # =============================================================================
@@ -696,6 +855,7 @@ class TrainingPipeline:
         self.config = config or PipelineConfig()
         self.data_loader = DataLoader(self.config)
         self.results_tracker = ResultsTracker()
+        self.results_tracker.results['class_names'] = self.config.CLASS_NAMES
         self.threshold_optimizer = None
         self.tuner = HyperparameterTuner(self.config)
         
@@ -713,6 +873,8 @@ class TrainingPipeline:
         self.model_results = {}
         self.best_model = None
         self.best_model_name = None
+        self.sample_weights_train = None
+        self.sample_weights_train_resampled = None
         
     def load_and_prepare(self, filepath: str) -> 'TrainingPipeline':
         """Stage 1: Load and prepare data with feature engineering."""
@@ -739,6 +901,11 @@ class TrainingPipeline:
         # Prepare
         X, y, feature_names = self.data_loader.prepare_data(df)
         self.feature_names = feature_names
+        self.results_tracker.set_feature_names(feature_names)
+        if self.data_loader.dropped_leakage_features:
+            self.results_tracker.results['leakage_mask'] = self.data_loader.dropped_leakage_features
+        else:
+            self.results_tracker.results['leakage_mask'] = []
         
         # First split: separate test set (final evaluation)
         X_temp, self.X_test, y_temp, self.y_test = train_test_split(
@@ -769,17 +936,23 @@ class TrainingPipeline:
         print("\n" + "="*60)
         print("⚖️ STAGE 2: CLASS IMBALANCE HANDLING (SMOTE)")
         print("="*60)
+        self.sample_weights_train = None
+        self.sample_weights_train_resampled = None
         
         if not SMOTE_AVAILABLE:
             print("⚠️ SMOTE not available. Skipping resampling.")
-            self.X_train_resampled = self.X_train
-            self.y_train_resampled = self.y_train
+            self.X_train_resampled = None
+            self.y_train_resampled = None
+            if self.config.USE_CLASS_WEIGHTS:
+                self.sample_weights_train = self._build_sample_weights(self.y_train)
             return self
         
         if not self.config.USE_SMOTE:
             print("⚠️ SMOTE disabled in config. Skipping resampling.")
-            self.X_train_resampled = self.X_train
-            self.y_train_resampled = self.y_train
+            self.X_train_resampled = None
+            self.y_train_resampled = None
+            if self.config.USE_CLASS_WEIGHTS:
+                self.sample_weights_train = self._build_sample_weights(self.y_train)
             return self
         
         # Original class distribution
@@ -787,12 +960,28 @@ class TrainingPipeline:
         print("\n📊 Original class distribution:")
         for cls, count in zip(unique, counts):
             print(f"   Class {cls}: {count} ({count/len(self.y_train)*100:.1f}%)")
+        min_class_count = counts.min()
+        if min_class_count <= 1:
+            print("⚠️ Not enough samples for SMOTE (requires at least 2 per minority class). Skipping resampling.")
+            self.X_train_resampled = None
+            self.y_train_resampled = None
+            if self.config.USE_CLASS_WEIGHTS:
+                self.sample_weights_train = self._build_sample_weights(self.y_train)
+            return self
+        k_neighbors = max(1, min(self.config.SMOTE_K_NEIGHBORS, int(min_class_count) - 1))
+        if k_neighbors < 1:
+            k_neighbors = 1
+        
+        # Build sampling strategy (custom ratios override global setting)
+        sampling_strategy = self._build_smote_strategy(self.y_train) or self.config.SMOTE_SAMPLING_STRATEGY
+        if isinstance(sampling_strategy, dict):
+            print(f"\n   Using custom SMOTE sampling strategy: {sampling_strategy}")
         
         # Apply SMOTE
         smote = SMOTE(
-            sampling_strategy=self.config.SMOTE_SAMPLING_STRATEGY,
+            sampling_strategy=sampling_strategy,
             random_state=self.config.RANDOM_STATE,
-            k_neighbors=5
+            k_neighbors=k_neighbors
         )
         
         self.X_train_resampled, self.y_train_resampled = smote.fit_resample(
@@ -806,6 +995,9 @@ class TrainingPipeline:
             print(f"   Class {cls}: {count} ({count/len(self.y_train_resampled)*100:.1f}%)")
         
         print(f"\n   Total samples: {len(self.y_train)} → {len(self.y_train_resampled)} (+{len(self.y_train_resampled) - len(self.y_train)})")
+        
+        if self.config.USE_CLASS_WEIGHTS and self.config.USE_CLASS_WEIGHTS_WITH_SMOTE:
+            self.sample_weights_train_resampled = self._build_sample_weights(self.y_train_resampled)
         
         return self
     
@@ -828,8 +1020,7 @@ class TrainingPipeline:
         ]
         
         # Use resampled data if available
-        X_train = self.X_train_resampled if self.X_train_resampled is not None else self.X_train
-        y_train = self.y_train_resampled if self.y_train_resampled is not None else self.y_train
+        X_train, y_train, _ = self._get_training_data()
         
         for name, model in baselines:
             print(f"\n🔧 Training: {name}")
@@ -869,8 +1060,7 @@ class TrainingPipeline:
         from src.models.tree_models import RandomForestModel
         
         # Use resampled data if available
-        X_train = self.X_train_resampled if self.X_train_resampled is not None else self.X_train
-        y_train = self.y_train_resampled if self.y_train_resampled is not None else self.y_train
+        X_train, y_train, sample_weights = self._get_training_data()
         
         # Check for optional models
         models = []
@@ -925,12 +1115,23 @@ class TrainingPipeline:
                     n_iter=self.config.TUNING_N_ITER,
                     n_jobs=2  # Reduced parallelism
                 )
-                xgb_model = XGBoostModel()
+                xgb_model = XGBoostModel(
+                    reg_alpha=self.config.XGB_REG_ALPHA,
+                    reg_lambda=self.config.XGB_REG_LAMBDA,
+                    min_child_weight=self.config.XGB_MIN_CHILD_WEIGHT
+                )
                 xgb_model.model = xgb_tuned
                 models.append(('XGBoost (Tuned)', xgb_model))
                 self.results_tracker.log_best_params('XGBoost', xgb_params)
             else:
-                models.append(('XGBoost', XGBoostModel()))
+                models.append((
+                    'XGBoost',
+                    XGBoostModel(
+                        reg_alpha=self.config.XGB_REG_ALPHA,
+                        reg_lambda=self.config.XGB_REG_LAMBDA,
+                        min_child_weight=self.config.XGB_MIN_CHILD_WEIGHT
+                    )
+                ))
         except ImportError:
             print("⚠️ XGBoost not available")
         
@@ -964,17 +1165,23 @@ class TrainingPipeline:
         
         for name, model in models:
             print(f"\n🔧 {'Training' if not tune else 'Evaluating'}: {name}")
+            model.feature_names = self.feature_names
             
-            # Train if not already fitted (tuned models are already fitted)
-            if not hasattr(model.model, 'classes_'):
+            needs_refit = sample_weights is not None or not hasattr(model.model, 'classes_')
+            if needs_refit:
                 if 'XGBoost' in name and hasattr(model, 'fit'):
                     model.fit(
                         X_train, y_train,
                         feature_names=self.feature_names,
-                        eval_set=[(self.X_val, self.y_val)]
+                        eval_set=[(self.X_val, self.y_val)],
+                        sample_weight=sample_weights
                     )
                 else:
-                    model.fit(X_train, y_train, feature_names=self.feature_names)
+                    model.fit(
+                        X_train, y_train,
+                        feature_names=self.feature_names,
+                        sample_weight=sample_weights
+                    )
             
             # Cross-validation score (skip for tuned models as they already did CV)
             if not tune:
@@ -984,13 +1191,16 @@ class TrainingPipeline:
                     cv_model = clone(cv_model)
                     cv_model.set_params(early_stopping_rounds=None)
                 
-                cv_scores = cross_val_score(
-                    cv_model, X_train, y_train,
-                    cv=self.config.CV_FOLDS,
-                    scoring='f1_macro',
-                    n_jobs=-1
-                )
-                print(f"   CV Macro F1: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+                if sample_weights is None:
+                    cv_scores = cross_val_score(
+                        cv_model, X_train, y_train,
+                        cv=self.config.CV_FOLDS,
+                        scoring='f1_macro',
+                        n_jobs=-1
+                    )
+                    print(f"   CV Macro F1: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+                else:
+                    print("   CV Macro F1: skipped (sample-weighted training)")
             
             # Validation set score
             y_pred = model.predict(self.X_val)
@@ -1032,8 +1242,7 @@ class TrainingPipeline:
         from src.models.ensembles import VotingEnsemble, StackingEnsemble
         
         # Use resampled data if available
-        X_train = self.X_train_resampled if self.X_train_resampled is not None else self.X_train
-        y_train = self.y_train_resampled if self.y_train_resampled is not None else self.y_train
+        X_train, y_train, _ = self._get_training_data()
         
         ensembles = [
             ('Voting Ensemble', VotingEnsemble(voting='soft', use_calibration=True)),
@@ -1097,6 +1306,7 @@ class TrainingPipeline:
             if not results.get('is_baseline', False):
                 self.best_model = results['model']
                 self.best_model_name = name
+                self.results_tracker.results['best_model_name'] = self.best_model_name
                 break
         
         print(f"\n🏆 Selected model: {self.best_model_name}")
@@ -1217,9 +1427,9 @@ class TrainingPipeline:
         # Comprehensive metrics
         results = {
             'model_name': self.best_model_name,
-            'test_macro_f1': f1_score(self.y_test, y_pred, average='macro'),
-            'test_weighted_f1': f1_score(self.y_test, y_pred, average='weighted'),
-            'test_accuracy': accuracy_score(self.y_test, y_pred),
+            'test_macro_f1': float(f1_score(self.y_test, y_pred, average='macro')),
+            'test_weighted_f1': float(f1_score(self.y_test, y_pred, average='weighted')),
+            'test_accuracy': float(accuracy_score(self.y_test, y_pred)),
             'test_per_class_f1': f1_score(self.y_test, y_pred, average=None).tolist(),
             'confusion_matrix': confusion_matrix(self.y_test, y_pred).tolist(),
             'timestamp': datetime.now().isoformat()
@@ -1257,8 +1467,57 @@ class TrainingPipeline:
             np.array(results['confusion_matrix']),
             self.config.CLASS_NAMES
         )
+        self.results_tracker.log_test_results(results)
         
         return results
+    
+    def _build_sample_weights(self, y: np.ndarray) -> Optional[np.ndarray]:
+        """Compute per-sample weights based on class imbalance strategy."""
+        if not self.config.USE_CLASS_WEIGHTS:
+            return None
+        
+        if getattr(self.config, 'CUSTOM_CLASS_WEIGHTS', None):
+            weight_map = {
+                int(cls): float(weight)
+                for cls, weight in self.config.CUSTOM_CLASS_WEIGHTS.items()
+            }
+        else:
+            classes = np.unique(y)
+            weights = compute_class_weight(
+                class_weight=self.config.CLASS_WEIGHT_STRATEGY,
+                classes=classes,
+                y=y
+            )
+            weight_map = {int(cls): float(w) for cls, w in zip(classes, weights)}
+        
+        return np.array([weight_map[int(label)] for label in y])
+    
+    def _get_training_data(self) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        """Return the active training matrix, labels, and optional sample weights."""
+        if self.X_train_resampled is not None:
+            weights = self.sample_weights_train_resampled if self.config.USE_CLASS_WEIGHTS_WITH_SMOTE else None
+            return self.X_train_resampled, self.y_train_resampled, weights
+        return self.X_train, self.y_train, self.sample_weights_train
+    
+    def _build_smote_strategy(self, y: np.ndarray) -> Optional[Dict[int, int]]:
+        """Translate ratio config into a SMOTE sampling_strategy dict."""
+        ratio_config = getattr(self.config, 'SMOTE_CLASS_RATIOS', None)
+        if not ratio_config:
+            return None
+        
+        unique, counts = np.unique(y, return_counts=True)
+        majority = counts.max()
+        class_counts = {int(cls): int(cnt) for cls, cnt in zip(unique, counts)}
+        strategy = {}
+        
+        for cls, ratio in ratio_config.items():
+            cls = int(cls)
+            current = class_counts.get(cls, 0)
+            target = int(majority * ratio)
+            if target > current:
+                strategy[cls] = target
+        
+        return strategy or None
     
     def save_model(self, save_path: str = None) -> str:
         """Save the best model to disk."""
@@ -1273,7 +1532,8 @@ class TrainingPipeline:
             'threshold_optimizer': self.threshold_optimizer,
             'config': {
                 'class_names': self.config.CLASS_NAMES,
-                'target_col': self.config.TARGET_COL
+                'target_col': self.config.TARGET_COL,
+                'leakage_mask': self.results_tracker.results.get('leakage_mask', [])
             }
         }, save_path)
         
@@ -1282,7 +1542,9 @@ class TrainingPipeline:
     
     def generate_report(self, output_path: str = "REPORT.md") -> str:
         """Generate comprehensive report."""
-        return self.results_tracker.generate_report(output_path)
+        report = self.results_tracker.generate_report(output_path)
+        self.results_tracker.export_artifacts(self.config.ARTIFACTS_PATH)
+        return report
     
     def run_full_pipeline(self, filepath: str, generate_report: bool = True) -> Dict[str, Any]:
         """
