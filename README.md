@@ -80,3 +80,20 @@ The system follows a modular architecture:
 4.  **Pipeline**: `src/train_pipeline.py` orchestrates the entire flow.
 
 See [REFINED_ML_ARCHITECTURE.md](REFINED_ML_ARCHITECTURE.md) for the detailed design philosophy.
+
+## ⚡ Live Demo Stack (API + UI)
+
+Keep stakeholders on live metrics with the FastAPI + React demo:
+
+1. **Start the API** (serves metrics, predictions, artifact plots)
+   ```bash
+   uvicorn app.api.main:app --reload
+   ```
+2. **Start the UI** (Vite + React + React Query)
+   ```bash
+   cd app/ui
+   npm install
+   cp env.example .env.local  # adjust VITE_API_BASE_URL if needed
+   npm run dev
+   ```
+3. Visit `http://localhost:5173` for KPI cards, refreshed plots, experiment timeline, and a "try a prediction" panel wired to `/predict`.

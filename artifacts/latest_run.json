@@ -1,0 +1,557 @@
+{
+  "generated_at": "2025-11-30T19:26:27.954439",
+  "baseline": {
+    "macro_f1": 0.7173869141678169,
+    "accuracy": 0.7590361445783133,
+    "per_class_f1": [
+      0.7759036144578313,
+      0.5333333333333333,
+      0.8429237947122862
+    ],
+    "model_name": "Logistic Regression",
+    "timestamp": "2025-11-30T19:26:22.287510"
+  },
+  "phases": [
+    {
+      "phase_name": "Model Training",
+      "description": "Best model: LightGBM (Tuned)",
+      "metrics": {
+        "macro_f1": 0.7259540743461281,
+        "accuracy": 0.7891566265060241,
+        "per_class_f1": [
+          0.8064516129032258,
+          0.507177033492823,
+          0.8642335766423358
+        ]
+      },
+      "params": {},
+      "timestamp": "2025-11-30T19:26:22.290475",
+      "delta_from_baseline": 0.008567160178311273,
+      "delta_pct": 1.1942175148607708
+    },
+    {
+      "phase_name": "Threshold Optimization",
+      "description": "Optimized thresholds: [0.21428571 0.72857143 0.27142857]",
+      "metrics": {
+        "macro_f1": 0.7449774646450226,
+        "accuracy": 0.786144578313253,
+        "per_class_f1": [
+          0.8098765432098766,
+          0.5670498084291188,
+          0.8580060422960725
+        ]
+      },
+      "params": {},
+      "timestamp": "2025-11-30T19:26:26.533042",
+      "delta_from_baseline": 0.02759055047720571,
+      "delta_pct": 3.8459790570910117
+    },
+    {
+      "phase_name": "Final Evaluation (Test Set)",
+      "description": "Final evaluation on held-out test set",
+      "metrics": {
+        "macro_f1": 0.7173797588905207,
+        "accuracy": 0.7590361445783133,
+        "per_class_f1": [
+          0.7794871794871795,
+          0.5190311418685121,
+          0.8536209553158706
+        ]
+      },
+      "params": {},
+      "timestamp": "2025-11-30T19:26:27.254575",
+      "delta_from_baseline": -7.155277296111429e-06,
+      "delta_pct": -0.0009974083935461373
+    }
+  ],
+  "best_params": {
+    "Random Forest": {
+      "max_depth": 19,
+      "max_features": "sqrt",
+      "min_samples_leaf": 1,
+      "min_samples_split": 8,
+      "n_estimators": 108
+    },
+    "XGBoost": {
+      "colsample_bytree": 0.6431565707973218,
+      "gamma": 0.015714592843367126,
+      "learning_rate": 0.19455901926649632,
+      "max_depth": 6,
+      "min_child_weight": 4,
+      "n_estimators": 321,
+      "reg_alpha": 0.1393314544058757,
+      "reg_lambda": 1.2088347585556345,
+      "subsample": 0.8159364365206693
+    },
+    "LightGBM": {
+      "colsample_bytree": 0.9272059063689972,
+      "learning_rate": 0.2596118691443396,
+      "max_depth": 9,
+      "min_child_samples": 10,
+      "n_estimators": 236,
+      "num_leaves": 81,
+      "reg_alpha": 0.22210781047073025,
+      "reg_lambda": 0.2397307346673656,
+      "subsample": 0.7350460685614512
+    }
+  },
+  "feature_importance": [
+    {
+      "Feature": "grade_improvement",
+      "Importance": 1403,
+      "Importance_Pct": 7.649528379041491
+    },
+    {
+      "Feature": "grade_per_unit_sem1",
+      "Importance": 1248,
+      "Importance_Pct": 6.80442723951802
+    },
+    {
+      "Feature": "Curricular units 1st sem (grade)",
+      "Importance": 1190,
+      "Importance_Pct": 6.4881958453737525
+    },
+    {
+      "Feature": "Father's occupation",
+      "Importance": 1079,
+      "Importance_Pct": 5.882994384166621
+    },
+    {
+      "Feature": "Course",
+      "Importance": 989,
+      "Importance_Pct": 5.39229049670138
+    },
+    {
+      "Feature": "family_education_avg",
+      "Importance": 980,
+      "Importance_Pct": 5.343220107954855
+    },
+    {
+      "Feature": "Mother's occupation",
+      "Importance": 900,
+      "Importance_Pct": 4.907038874652418
+    },
+    {
+      "Feature": "Age at enrollment",
+      "Importance": 840,
+      "Importance_Pct": 4.57990294967559
+    },
+    {
+      "Feature": "approval_rate_trend",
+      "Importance": 768,
+      "Importance_Pct": 4.187339839703396
+    },
+    {
+      "Feature": "eval_efficiency_sem1",
+      "Importance": 669,
+      "Importance_Pct": 3.647565563491631
+    },
+    {
+      "Feature": "approval_rate_overall",
+      "Importance": 619,
+      "Importance_Pct": 3.374952292677608
+    },
+    {
+      "Feature": "Curricular units 1st sem (evaluations)",
+      "Importance": 578,
+      "Importance_Pct": 3.1514094106101087
+    },
+    {
+      "Feature": "Application mode",
+      "Importance": 488,
+      "Importance_Pct": 2.6607055231448666
+    },
+    {
+      "Feature": "Mother's qualification",
+      "Importance": 486,
+      "Importance_Pct": 2.6498009923123056
+    },
+    {
+      "Feature": "Inflation rate",
+      "Importance": 460,
+      "Importance_Pct": 2.508042091489014
+    },
+    {
+      "Feature": "Unemployment rate",
+      "Importance": 459,
+      "Importance_Pct": 2.5025898260727333
+    },
+    {
+      "Feature": "Father's qualification",
+      "Importance": 448,
+      "Importance_Pct": 2.442614906493648
+    },
+    {
+      "Feature": "Application order",
+      "Importance": 440,
+      "Importance_Pct": 2.3989967831634043
+    },
+    {
+      "Feature": "total_approved_units",
+      "Importance": 425,
+      "Importance_Pct": 2.3172128019191973
+    },
+    {
+      "Feature": "GDP",
+      "Importance": 399,
+      "Importance_Pct": 2.175453901095905
+    },
+    {
+      "Feature": "economic_stress_index",
+      "Importance": 315,
+      "Importance_Pct": 1.7174636061283464
+    },
+    {
+      "Feature": "approval_rate_sem1",
+      "Importance": 308,
+      "Importance_Pct": 1.6792977482143832
+    },
+    {
+      "Feature": "Curricular units 1st sem (enrolled)",
+      "Importance": 184,
+      "Importance_Pct": 1.0032168365956056
+    },
+    {
+      "Feature": "Curricular units 1st sem (approved)",
+      "Importance": 179,
+      "Importance_Pct": 0.9759555095142031
+    },
+    {
+      "Feature": "Gender",
+      "Importance": 172,
+      "Importance_Pct": 0.9377896516002399
+    },
+    {
+      "Feature": "Scholarship holder",
+      "Importance": 167,
+      "Importance_Pct": 0.9105283245188376
+    },
+    {
+      "Feature": "gdp_norm",
+      "Importance": 156,
+      "Importance_Pct": 0.8505534049397525
+    },
+    {
+      "Feature": "unemployment_norm",
+      "Importance": 148,
+      "Importance_Pct": 0.8069352816095088
+    },
+    {
+      "Feature": "grade_trajectory_slight_decline",
+      "Importance": 144,
+      "Importance_Pct": 0.7851262199443869
+    },
+    {
+      "Feature": "Displaced",
+      "Importance": 135,
+      "Importance_Pct": 0.7360558311978628
+    },
+    {
+      "Feature": "total_risk_factors",
+      "Importance": 133,
+      "Importance_Pct": 0.7251513003653018
+    },
+    {
+      "Feature": "financial_vulnerability",
+      "Importance": 132,
+      "Importance_Pct": 0.7196990349490213
+    },
+    {
+      "Feature": "Curricular units 1st sem (without evaluations)",
+      "Importance": 123,
+      "Importance_Pct": 0.6706286462024972
+    },
+    {
+      "Feature": "inflation_norm",
+      "Importance": 118,
+      "Importance_Pct": 0.6433673191210948
+    },
+    {
+      "Feature": "Tuition fees up to date",
+      "Importance": 107,
+      "Importance_Pct": 0.5833923995420097
+    },
+    {
+      "Feature": "Curricular units 1st sem (credited)",
+      "Importance": 92,
+      "Importance_Pct": 0.5016084182978028
+    },
+    {
+      "Feature": "Previous qualification",
+      "Importance": 90,
+      "Importance_Pct": 0.4907038874652418
+    },
+    {
+      "Feature": "Debtor",
+      "Importance": 86,
+      "Importance_Pct": 0.46889482580011993
+    },
+    {
+      "Feature": "Marital status",
+      "Importance": 83,
+      "Importance_Pct": 0.4525380295512786
+    },
+    {
+      "Feature": "financial_risk",
+      "Importance": 82,
+      "Importance_Pct": 0.44708576413499806
+    },
+    {
+      "Feature": "course_load_change_pct",
+      "Importance": 81,
+      "Importance_Pct": 0.44163349871871765
+    },
+    {
+      "Feature": "age_group_typical",
+      "Importance": 65,
+      "Importance_Pct": 0.3543972520582302
+    },
+    {
+      "Feature": "age_group_young",
+      "Importance": 55,
+      "Importance_Pct": 0.29987459789542553
+    },
+    {
+      "Feature": "course_load_change",
+      "Importance": 52,
+      "Importance_Pct": 0.28351780164658413
+    },
+    {
+      "Feature": "course_load_volatility",
+      "Importance": 48,
+      "Importance_Pct": 0.26170873998146227
+    },
+    {
+      "Feature": "grade_trajectory_slight_improve",
+      "Importance": 37,
+      "Importance_Pct": 0.2017338204023772
+    },
+    {
+      "Feature": "financial_academic_risk",
+      "Importance": 29,
+      "Importance_Pct": 0.15811569707213347
+    },
+    {
+      "Feature": "is_mature_student",
+      "Importance": 22,
+      "Importance_Pct": 0.11994983915817022
+    },
+    {
+      "Feature": "first_gen_financial_risk",
+      "Importance": 20,
+      "Importance_Pct": 0.1090453083256093
+    },
+    {
+      "Feature": "total_units_without_eval",
+      "Importance": 19,
+      "Importance_Pct": 0.10359304290932883
+    },
+    {
+      "Feature": "Daytime/evening attendance",
+      "Importance": 15,
+      "Importance_Pct": 0.08178398124420697
+    },
+    {
+      "Feature": "Nationality",
+      "Importance": 15,
+      "Importance_Pct": 0.08178398124420697
+    },
+    {
+      "Feature": "has_financial_support",
+      "Importance": 11,
+      "Importance_Pct": 0.05997491957908511
+    },
+    {
+      "Feature": "high_risk_student",
+      "Importance": 11,
+      "Importance_Pct": 0.05997491957908511
+    },
+    {
+      "Feature": "zero_enrolled_sem1",
+      "Importance": 10,
+      "Importance_Pct": 0.05452265416280465
+    },
+    {
+      "Feature": "Educational special needs",
+      "Importance": 8,
+      "Importance_Pct": 0.043618123330243716
+    },
+    {
+      "Feature": "low_family_education",
+      "Importance": 7,
+      "Importance_Pct": 0.03816585791396325
+    },
+    {
+      "Feature": "age_group_returning",
+      "Importance": 5,
+      "Importance_Pct": 0.027261327081402324
+    },
+    {
+      "Feature": "International",
+      "Importance": 3,
+      "Importance_Pct": 0.016356796248841392
+    },
+    {
+      "Feature": "engagement_risk_score",
+      "Importance": 3,
+      "Importance_Pct": 0.016356796248841392
+    },
+    {
+      "Feature": "units_without_eval_sem1",
+      "Importance": 2,
+      "Importance_Pct": 0.010904530832560929
+    },
+    {
+      "Feature": "grade_trajectory_improving",
+      "Importance": 1,
+      "Importance_Pct": 0.0054522654162804645
+    },
+    {
+      "Feature": "disengaging_while_struggling",
+      "Importance": 0,
+      "Importance_Pct": 0.0
+    }
+  ],
+  "confusion_matrices": {
+    "Final": {
+      "matrix": [
+        [
+          152,
+          46,
+          15
+        ],
+        [
+          19,
+          75,
+          25
+        ],
+        [
+          6,
+          49,
+          277
+        ]
+      ],
+      "class_names": [
+        "Dropout",
+        "Enrolled",
+        "Graduate"
+      ]
+    }
+  },
+  "timestamps": {
+    "baseline": "2025-11-30T19:26:22.287517"
+  },
+  "feature_names": [
+    "Marital status",
+    "Application mode",
+    "Application order",
+    "Course",
+    "Daytime/evening attendance",
+    "Previous qualification",
+    "Nationality",
+    "Mother's qualification",
+    "Father's qualification",
+    "Mother's occupation",
+    "Father's occupation",
+    "Displaced",
+    "Educational special needs",
+    "Debtor",
+    "Tuition fees up to date",
+    "Gender",
+    "Scholarship holder",
+    "Age at enrollment",
+    "International",
+    "Curricular units 1st sem (credited)",
+    "Curricular units 1st sem (enrolled)",
+    "Curricular units 1st sem (evaluations)",
+    "Curricular units 1st sem (approved)",
+    "Curricular units 1st sem (grade)",
+    "Curricular units 1st sem (without evaluations)",
+    "Unemployment rate",
+    "Inflation rate",
+    "GDP",
+    "grade_improvement",
+    "approval_rate_sem1",
+    "approval_rate_overall",
+    "approval_rate_trend",
+    "total_approved_units",
+    "eval_efficiency_sem1",
+    "grade_per_unit_sem1",
+    "course_load_change",
+    "course_load_change_pct",
+    "course_load_volatility",
+    "units_without_eval_sem1",
+    "total_units_without_eval",
+    "zero_enrolled_sem1",
+    "engagement_risk_score",
+    "financial_risk",
+    "has_financial_support",
+    "unemployment_norm",
+    "inflation_norm",
+    "gdp_norm",
+    "economic_stress_index",
+    "financial_vulnerability",
+    "family_education_avg",
+    "low_family_education",
+    "is_mature_student",
+    "financial_academic_risk",
+    "first_gen_financial_risk",
+    "disengaging_while_struggling",
+    "total_risk_factors",
+    "high_risk_student",
+    "grade_trajectory_improving",
+    "grade_trajectory_slight_decline",
+    "grade_trajectory_slight_improve",
+    "age_group_returning",
+    "age_group_typical",
+    "age_group_young"
+  ],
+  "test_results": {
+    "model_name": "LightGBM (Tuned)",
+    "test_macro_f1": 0.7173797588905207,
+    "test_weighted_f1": 0.7698759522258903,
+    "test_accuracy": 0.7590361445783133,
+    "test_per_class_f1": [
+      0.7794871794871795,
+      0.5190311418685121,
+      0.8536209553158706
+    ],
+    "confusion_matrix": [
+      [
+        152,
+        46,
+        15
+      ],
+      [
+        19,
+        75,
+        25
+      ],
+      [
+        6,
+        49,
+        277
+      ]
+    ],
+    "timestamp": "2025-11-30T19:26:27.193792"
+  },
+  "best_model_name": "LightGBM (Tuned)",
+  "leakage_mask": [
+    "Curricular units 2nd sem (approved)",
+    "Curricular units 2nd sem (credited)",
+    "Curricular units 2nd sem (enrolled)",
+    "Curricular units 2nd sem (evaluations)",
+    "Curricular units 2nd sem (grade)",
+    "Curricular units 2nd sem (without evaluations)",
+    "approval_rate_sem2",
+    "eval_efficiency_sem2",
+    "grade_per_unit_sem2",
+    "units_without_eval_sem2",
+    "zero_enrolled_sem2"
+  ],
+  "class_names": [
+    "Dropout",
+    "Enrolled",
+    "Graduate"
+  ]
+}
