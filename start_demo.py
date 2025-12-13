@@ -292,14 +292,43 @@ def main():
     # Step 2.5: Show model comparison
     show_model_comparison()
 
-    # Step 3: Regenerate visuals
+    # Step 2.6: Run Model Interpretation
+    run_interpretation()
+
+    # Step 3: Regenerate visuals (including story plots)
     regenerate_visuals()
+    run_story_plots()
 
     # Step 4: Install UI deps
     install_ui_deps()
 
     # Step 5: Launch backend + frontend
     start_services()
+
+
+def run_interpretation():
+    """Run the model interpretation script."""
+    print("\n🔍 Running model interpretation...")
+    python_cmd = get_python_cmd()
+    result = subprocess.run(
+        python_cmd + ["run_interpretation.py"],
+        cwd=PROJECT_ROOT,
+    )
+    if result.returncode != 0:
+        print("⚠️  Interpretation failed (non-critical).")
+
+
+def run_story_plots():
+    """Run the story plotting script."""
+    print("\n📊 Generating storytelling plots...")
+    python_cmd = get_python_cmd()
+    result = subprocess.run(
+        python_cmd + ["generate_story_plots.py"],
+        cwd=PROJECT_ROOT,
+    )
+    if result.returncode != 0:
+        print("⚠️  Story plots generation failed (non-critical).")
+
 
 
 if __name__ == "__main__":

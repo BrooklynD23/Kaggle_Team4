@@ -64,6 +64,26 @@ class ModelRegistry:
         payload = joblib.load(model_path)
         stat = model_path.stat()
         
+        # Handle raw model files (legacy support)
+        if not isinstance(payload, dict):
+            feature_names = getattr(payload, "feature_names_in_", [])
+            if hasattr(feature_names, "tolist"):
+                feature_names = feature_names.tolist()
+                
+            return {
+                "model": payload,
+                "model_name": model_path.stem,
+                "feature_names": feature_names,
+                "threshold_optimizer": None,
+                "class_names": ["Dropout", "Enrolled", "Graduate"],  # Default fallback
+                "target_col": "Target",
+                "path": model_path,
+                "filename": model_path.name,
+                "loaded_at": datetime.utcnow().isoformat(),
+                "file_size": stat.st_size,
+                "file_mtime": datetime.utcfromtimestamp(stat.st_mtime).isoformat()
+            }
+
         return {
             "model": payload["model"],
             "model_name": payload.get("model_name", model_path.stem),
@@ -116,9 +136,14 @@ class ModelRegistry:
                 stat = model_path.stat()
                 # Try to load just metadata without the full model
                 payload = joblib.load(model_path)
+                
+                model_name = model_path.stem
+                if isinstance(payload, dict):
+                    model_name = payload.get("model_name", model_path.stem)
+
                 models.append({
                     "filename": model_path.name,
-                    "model_name": payload.get("model_name", model_path.stem),
+                    "model_name": model_name,
                     "file_size": stat.st_size,
                     "file_mtime": datetime.utcfromtimestamp(stat.st_mtime).isoformat(),
                     "is_current": self.latest_path == model_path if self.latest_path else False

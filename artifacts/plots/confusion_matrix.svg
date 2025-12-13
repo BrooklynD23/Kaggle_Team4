@@ -6,11 +6,11 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2025-12-02T07:39:10.422483</dc:date>
+    <dc:date>2025-12-04T11:40:02.970542</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>Matplotlib v3.10.1, https://matplotlib.org/</dc:title>
+      <dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -42,7 +42,7 @@ z
      <g id="line2d_1">
       <path d="M 97.534219 299.135625 
 L 97.534219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_1">
       <!-- Dropout -->
@@ -201,7 +201,7 @@ z
      <g id="line2d_2">
       <path d="M 209.134219 299.135625 
 L 209.134219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_2">
       <!-- Enrolled -->
@@ -318,7 +318,7 @@ z
      <g id="line2d_3">
       <path d="M 320.734219 299.135625 
 L 320.734219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_3">
       <!-- Graduate -->
@@ -491,7 +491,7 @@ z
      <g id="line2d_4">
       <path d="M 41.734219 68.135625 
 L 376.534219 68.135625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_5">
       <!-- Dropout -->
@@ -510,7 +510,7 @@ L 376.534219 68.135625
      <g id="line2d_5">
       <path d="M 41.734219 160.535625 
 L 376.534219 160.535625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_6">
       <!-- Enrolled -->
@@ -530,7 +530,7 @@ L 376.534219 160.535625
      <g id="line2d_6">
       <path d="M 41.734219 252.935625 
 L 376.534219 252.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
+" clip-path="url(#pef64cb56d8)" style="fill: none; stroke: #cccccc; stroke-linecap: round"/>
      </g>
      <g id="text_7">
       <!-- Graduate -->
@@ -584,55 +584,55 @@ L 153.334219 21.935625
 L 153.334219 114.335625 
 L 41.734219 114.335625 
 L 41.734219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #5fa6d1"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #5fa6d1"/>
     <path d="M 153.334219 21.935625 
 L 264.934219 21.935625 
 L 264.934219 114.335625 
 L 153.334219 114.335625 
 L 153.334219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #dae8f6"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #dae8f6"/>
     <path d="M 264.934219 21.935625 
 L 376.534219 21.935625 
 L 376.534219 114.335625 
 L 264.934219 114.335625 
 L 264.934219 21.935625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #f1f7fd"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #f1f7fd"/>
     <path d="M 41.734219 114.335625 
 L 153.334219 114.335625 
 L 153.334219 206.735625 
 L 41.734219 206.735625 
 L 41.734219 114.335625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #eef5fc"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #eef5fc"/>
     <path d="M 153.334219 114.335625 
 L 264.934219 114.335625 
 L 264.934219 206.735625 
 L 153.334219 206.735625 
 L 153.334219 114.335625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #c4daee"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #c4daee"/>
     <path d="M 264.934219 114.335625 
 L 376.534219 114.335625 
 L 376.534219 206.735625 
 L 264.934219 206.735625 
 L 264.934219 114.335625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #eaf2fb"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #eaf2fb"/>
     <path d="M 41.734219 206.735625 
 L 153.334219 206.735625 
 L 153.334219 299.135625 
 L 41.734219 299.135625 
 L 41.734219 206.735625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #f7fbff"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #f7fbff"/>
     <path d="M 153.334219 206.735625 
 L 264.934219 206.735625 
 L 264.934219 299.135625 
 L 153.334219 299.135625 
 L 153.334219 206.735625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #d8e7f5"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #d8e7f5"/>
     <path d="M 264.934219 206.735625 
 L 376.534219 206.735625 
 L 376.534219 299.135625 
 L 264.934219 299.135625 
 L 264.934219 206.735625 
-" clip-path="url(#p764f7f4ef4)" style="fill: #08306b"/>
+" clip-path="url(#pef64cb56d8)" style="fill: #08306b"/>
    </g>
    <g id="text_9">
     <!-- 152 -->
@@ -1101,7 +1101,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p764f7f4ef4">
+  <clipPath id="pef64cb56d8">
    <rect x="41.734219" y="21.935625" width="334.8" height="277.2"/>
   </clipPath>
  </defs>
